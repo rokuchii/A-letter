@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>22，遥远的生日快乐</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-color: #f1f6f3;
+            --mint-dark: #4e6e5d;
+            --mint-primary: #78a08f;
+            --mint-medium: #a4c3b2;
+            --mint-light: #cce3de;
+            --mint-soft: #eaf4f0;
+            --text-main: #2f3e46;
+            --text-muted: #6b9080;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            overflow-y: auto;
+            perspective: 1000px;
+        }
+
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--mint-medium);
+            border-radius: 3px;
+        }
+
+        /* 初始全屏欢迎文字 */
+        #intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .intro-text {
+            font-size: 26px;
+            font-weight: 300;
+            color: var(--mint-dark);
+            letter-spacing: 6px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInMove 2.5s forwards cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        @keyframes fadeInMove {
+            0% { opacity: 0; transform: translateY(20px); letter-spacing: 2px; }
+            40% { opacity: 1; transform: translateY(0); letter-spacing: 6px; }
+            80% { opacity: 1; transform: translateY(0); letter-spacing: 6px; }
+            100% { opacity: 0; transform: translateY(-10px); letter-spacing: 6px; }
+        }
+
+        /* 主容器 */
+        #main-container {
+            opacity: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 600px;
+            min-height: 100vh;
+            padding: 40px 20px;
+            transition: opacity 1.2s ease;
+            position: relative;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--mint-dark);
+            letter-spacing: 4px;
+            margin-bottom: 60px;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 1s ease 0.3s;
+            text-align: center;
+        }
+
+        /* 信封区域包装 */
+        .envelope-wrapper {
+            position: relative;
+            width: 340px;
+            height: 220px;
+            margin-bottom: 50px;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        /* 信封主体 */
+        .envelope {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: #dce8e3;
+            border-radius: 6px;
+            box-shadow: 0 15px 35px rgba(107, 144, 128, 0.15);
+            transform-style: preserve-3d;
+        }
+
+        /* 信封上盖三角形 */
+        .envelope-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-left: 170px solid transparent;
+            border-right: 170px solid transparent;
+            border-top: 120px solid var(--mint-primary);
+            transform-origin: top;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), z-index 0.2s;
+            z-index: 4;
+            border-radius: 6px 6px 0 0;
+        }
+
+        /* 信封下部口袋 */
+        .envelope-pocket {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-left: 170px solid var(--mint-medium);
+            border-right: 170px solid var(--mint-medium);
+            border-bottom: 110px solid var(--mint-medium);
+            border-top: 110px solid transparent;
+            border-radius: 0 0 6px 6px;
+            z-index: 3;
+        }
+
+        /* 隐藏在信封内的折叠信纸 */
+        .letter-folded {
+            position: absolute;
+            left: 20px;
+            bottom: 15px;
+            width: 300px;
+            height: 160px;
+            background-color: #ffffff;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            z-index: 2;
+            transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 打开按钮 */
+        .open-btn {
+            position: absolute;
+            bottom: -70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--mint-dark);
+            color: #ffffff;
+            padding: 12px 32px;
+            border-radius: 24px;
+            font-size: 14px;
+            letter-spacing: 3px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(78, 110, 93, 0.25);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            border: none;
+            outline: none;
+        }
+
+        .open-btn:hover {
+            background-color: #3d5649;
+            transform: translateX(-50%) translateY(-2px);
+            box-shadow: 0 8px 25px rgba(78, 110, 93, 0.35);
+        }
+
+        /* 信封打开状态样式切换 */
+        .envelope-wrapper.open .envelope-flap {
+            transform: rotateX(180deg);
+            z-index: 1;
+        }
+
+        .envelope-wrapper.open .letter-folded {
+            transform: translateY(-140px);
+            z-index: 5;
+        }
+
+        /* 信封渐隐过渡 */
+        .envelope-wrapper.fade-out-env {
+            opacity: 0;
+            transform: scale(0.9) translateY(-30px);
+            pointer-events: none;
+        }
+
+        /* 独立滑出并居中的折叠信纸组件 */
+        .standalone-folded {
+            position: absolute;
+            width: 300px;
+            height: 160px;
+            background-color: #ffffff;
+            border-radius: 4px;
+            box-shadow: 0 12px 35px rgba(107, 144, 128, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transform: scale(0.9) translateY(40px);
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            pointer-events: none;
+            z-index: 50;
+            border: 1px solid var(--mint-soft);
+        }
+
+        .standalone-folded::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(107, 144, 128, 0.12), transparent);
+        }
+
+        .standalone-folded .hint-text {
+            color: var(--text-muted);
+            font-size: 13px;
+            letter-spacing: 4px;
+            text-indent: 4px;
+            animation: pulseText 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseText {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; transform: scale(1.02); }
+            100% { opacity: 0.6; }
+        }
+
+        .standalone-folded.show {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+            margin-top: 40px;
+        }
+
+        .standalone-folded.show:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 18px 45px rgba(107, 144, 128, 0.22);
+        }
+
+        .standalone-folded.hide {
+            opacity: 0;
+            transform: scale(1.05);
+            pointer-events: none;
+        }
+
+        /* 展开后的完整信件视图 */
+        .letter-full-view {
+            width: 100%;
+            max-width: 520px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 15px 45px rgba(107, 144, 128, 0.12);
+            opacity: 0;
+            transform: scale(0.96) translateY(30px);
+            max-height: 0;
+            overflow: hidden;
+            transition: opacity 1.2s cubic-bezier(0.25, 1, 0.5, 1), 
+                        transform 1.2s cubic-bezier(0.25, 1, 0.5, 1), 
+                        max-height 1.5s cubic-bezier(0.25, 1, 0.5, 1), 
+                        padding 1s ease;
+            padding: 0 40px;
+            border-top: 4px solid var(--mint-primary);
+            border-bottom: 4px solid var(--mint-primary);
+        }
+
+        .letter-full-view.unfolded {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            max-height: 2000px;
+            padding: 50px 40px;
+            margin-top: 10px;
+            margin-bottom: 60px;
+        }
+
+        /* 信件文本排版 */
+        .letter-text-content {
+            opacity: 0;
+            transition: opacity 0.8s ease 0.5s;
+            line-height: 1.85;
+            font-size: 15px;
+            letter-spacing: 1.5px;
+            text-align: justify;
+            color: var(--text-main);
+        }
+
+        .letter-full-view.unfolded .letter-text-content {
+            opacity: 1;
+        }
+
+        .letter-p {
+            margin-bottom: 22px;
+            text-indent: 2em;
+        }
+
+        .letter-p.salutation {
+            text-indent: 0;
+            font-weight: 600;
+            color: var(--mint-dark);
+            font-size: 16px;
+            margin-bottom: 25px;
+        }
+
+        .letter-p.signature {
+            text-indent: 0;
+            text-align: right;
+            margin-top: 45px;
+            margin-bottom: 0;
+            color: var(--mint-primary);
+            font-weight: 600;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. 打开文件时的动效文字 -->
+    <div id="intro-screen">
+        <div class="intro-text">22，遥远的生日快乐</div>
+    </div>
+
+    <!-- 主展示容器 -->
+    <div id="main-container">
+        
+        <!-- 顶部固定的优雅副标题 -->
+        <h2 class="header-title" id="header-title">22，遥远的生日快乐</h2>
+
+        <!-- 2. 信封区域 -->
+        <div class="envelope-wrapper" id="envelope-wrapper">
+            <div class="envelope">
+                <div class="envelope-flap"></div>
+                <div class="envelope-pocket"></div>
+                <div class="letter-folded"></div>
+            </div>
+            <button class="open-btn" id="open-btn">点击打开</button>
+        </div>
+
+        <!-- 3. 滑出后的独立折叠信纸 -->
+        <div class="standalone-folded" id="standalone-folded">
+            <span class="hint-text">点击展开信纸</span>
+        </div>
+
+        <!-- 4. 最终展开的信件全文 -->
+        <div class="letter-full-view" id="letter-full-view">
+            <div class="letter-text-content">
+                <p class="letter-p salutation">亲爱的赖雨桐：</p>
+                <p class="letter-p">生日快乐！</p>
+                <p class="letter-p">这段日子或快或慢，你的生日还是如约而至。我算了算，到现在，我们已经度过了一个比所有假期都更长的分别——史无前例地，分开了这么久。</p>
+                <p class="letter-p">22岁，我们都在朝着某种可能性前进。</p>
+                <p class="letter-p">也许是迫于外界的期待，所以我们会痛苦；也许未来有一百种可能，而真正能够由自己决定的，并没有想象中那么多。这确实不好说。</p>
+                <p class="letter-p">但我始终觉得，只要我们还保留着对精神世界的追求，仍然会为那些美丽而美好的事物停留，仍然能够真切地感知情感，守住自己完整的内核，那么一切就都还有转机。</p>
+                <p class="letter-p">话又说回来，正在走的这条路，并不容易。</p>
+                <p class="letter-p">幸运的是，我们可以彼此体谅。我真心地祝愿你能够战胜这个漫长的夏天。</p>
+                <p class="letter-p">希望你一切都好。</p>
+                <p class="letter-p">要快乐，也要继续向前。</p>
+                <p class="letter-p">生日快乐。</p>
+                <p class="letter-p signature">From Floy_</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const introScreen = document.getElementById('intro-screen');
+            const mainContainer = document.getElementById('main-container');
+            const headerTitle = document.getElementById('header-title');
+            const envelopeWrapper = document.getElementById('envelope-wrapper');
+            const openBtn = document.getElementById('open-btn');
+            const standaloneFolded = document.getElementById('standalone-folded');
+            const letterFullView = document.getElementById('letter-full-view');
+
+            // 步骤 1：开场文字播放完毕后，丝滑切换到信封界面
+            setTimeout(() => {
+                introScreen.style.opacity = '0';
+                introScreen.style.transform = 'scale(1.02)';
+                
+                setTimeout(() => {
+                    introScreen.style.display = 'none';
+                    mainContainer.style.opacity = '1';
+                    
+                    // 副标题缓动浮现
+                    setTimeout(() => {
+                        headerTitle.style.opacity = '1';
+                        headerTitle.style.transform = 'translateY(0)';
+                    }, 200);
+                }, 1200);
+            }, 2600);
+
+            // 步骤 2：点击打开信封，信纸滑出且信封渐隐
+            openBtn.addEventListener('click', () => {
+                // 按钮优先渐隐
+                openBtn.style.opacity = '0';
+                openBtn.style.pointerEvents = 'none';
+                
+                // 1. 信封上盖打开
+                envelopeWrapper.classList.add('open');
+                
+                // 2. 动画等待信纸完全滑出后，信封整体丝滑渐隐，折叠信纸独立浮现
+                setTimeout(() => {
+                    envelopeWrapper.classList.add('fade-out-env');
+                    
+                    setTimeout(() => {
+                        envelopeWrapper.style.display = 'none';
+                        standaloneFolded.classList.add('show');
+                    }, 800); // 衔接信封渐隐时间
+                }, 1200); // 等待滑出动效完成
+            });
+
+            // 步骤 3：点击折叠的信纸，信纸平滑展开呈现内容
+            standaloneFolded.addEventListener('click', () => {
+                standaloneFolded.classList.remove('show');
+                standaloneFolded.classList.add('hide');
+                
+                setTimeout(() => {
+                    standaloneFolded.style.display = 'none';
+                    letterFullView.classList.add('unfolded');
+                }, 600);
+            });
+        });
+    </script>
+</body>
+</html>
